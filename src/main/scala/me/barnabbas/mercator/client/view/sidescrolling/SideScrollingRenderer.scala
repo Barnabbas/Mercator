@@ -3,6 +3,7 @@ package me.barnabbas.mercator.client.view.sidescrolling
 import me.barnabbas.mercator.client.view.Renderer
 import me.barnabbas.mercator.client.networking.SideScrollingNetworker
 import me.barnabbas.mercator.networking.AreaSet
+import me.barnabbas.mercator.networking.Entity
 
 import org.lwjgl.opengl.GL11._
 
@@ -36,22 +37,28 @@ trait SideScrollingRenderer extends Renderer {
    * Renders the entities of this SideScrolling map, based on the AreaSet
    */
   protected def renderEntities(areaSet: AreaSet) {
-    for (player <- areaSet.player) {
-      val (x, y, z) = player.location
-      val (width, height) = (16, 32)
+    areaSet.entities foreach (renderEntity _)
+    areaSet.player foreach (renderEntity _)
+  }
 
-      // running the given code
-      // set the color of the quad (R,G,B,A)
-      glColor3f(0.5f, 0.5f, 1.0f)
+  /**
+   * Renders one entity.
+   */
+  protected def renderEntity(entity: Entity) {
+    val (x, y, z) = entity.location
+    val (width, height) = (16, 32)
 
-      // draw quad
-      glBegin(GL_QUADS)
-      glVertex3f(x, y, z + 8)
-      glVertex3f(x + width, y, z + 8)
-      glVertex3f(x + width, y + height, z + 8)
-      glVertex3f(x, y + height, z + 8)
-      glEnd()
-    }
+    // running the given code
+    // set the color of the quad (R,G,B,A)
+    glColor3f(0.5f, 0.5f, 1.0f)
+
+    // draw quad
+    glBegin(GL_QUADS)
+    glVertex3f(x, y, z + 8)
+    glVertex3f(x + width, y, z + 8)
+    glVertex3f(x + width, y + height, z + 8)
+    glVertex3f(x, y + height, z + 8)
+    glEnd()
   }
 
 }

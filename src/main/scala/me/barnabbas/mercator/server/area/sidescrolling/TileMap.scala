@@ -1,9 +1,17 @@
 package me.barnabbas.mercator.server.area.sidescrolling
 
+import akka.actor.ActorContext
+
 /**
  * A TileMap is a Map that is used to determine where there are obstacles on the map.
  */
 trait TileMap {
+  
+  /**
+   * Used by SideScrolling Area to add a context to it.
+   */
+  private[sidescrolling] def start(context: ActorContext): TileMap
+  
   /**
    * Determines if the given entity is on the floor
    * @param location the location of the entity

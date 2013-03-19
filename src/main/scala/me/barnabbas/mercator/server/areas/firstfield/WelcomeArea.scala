@@ -73,7 +73,7 @@ object WelcomeArea {
 
   private class HouseArea extends SideScrollingArea {
     def identifier = "welcome.house" // currently named welcome.field (just to make it easier)
-    val tileMap = {
+    def tileMap = {
       val event = Tile.Event(leaveEntity(_, HouseFieldGate))
       
       val roof: PartialFunction[(Int, Int, Int), Tile] = {

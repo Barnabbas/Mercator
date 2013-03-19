@@ -16,9 +16,9 @@ class Networker extends Actor {
   override def receive = {
     // got start request
     case Networker.Start(server) => {
-      require(server != null, "Server must be initialised!")
-      server ! ("Stef", self)
+      server ! (math.random.toString, self)
     }
+    
     case connect @ Connect(actor, description) => description match {
       case SideScrolling3D(id) => {
         val networker = context.actorOf(Props[SideScrollingNetworker])
@@ -30,6 +30,7 @@ class Networker extends Actor {
         networker ! connect
       }
     }
+    
     case "exit" => Application.shutdown()
   }
 

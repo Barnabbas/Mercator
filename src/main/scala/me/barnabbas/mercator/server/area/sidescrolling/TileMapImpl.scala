@@ -4,10 +4,12 @@ import me.barnabbas.mercator.server.area.sidescrolling.Point._
 import akka.actor.Actor
 import akka.actor.TypedActor
 import akka.actor.Props
+import akka.actor.ActorRef
+import akka.actor.ActorContext
 
 /**
  * Simple implementation for the TileMap trait.
- * This assumes that it is used as a TypedActor.
+ * This TileMap must be started before using it.
  */
 private[sidescrolling] class TileMapImpl private (tiles: ((Int, Int, Int)) => Tile,
     val tileWidth: Int, val tileHeight: Int, val tileDepth: Int) extends TileMap {
@@ -16,7 +18,12 @@ private[sidescrolling] class TileMapImpl private (tiles: ((Int, Int, Int)) => Ti
   import Tile._
   
   /** The actor to handle the events (this must be done asynchronous) */
-  private lazy val eventActor = TypedActor.context.actorOf(Props[EventActor], "EventActor")
+  private var eventActor: ActorRef = _
+  
+  private[sidescrolling] def start(context: ActorContext): TileMap = {
+    eventActor = context.actorOf(Props[EventActor], "TileMapEventActor")
+    this
+  }
   
 
   def isOnFloor(location: Point3D, size: Point3D) = {
@@ -32,7 +39,10 @@ private[sidescrolling] class TileMapImpl private (tiles: ((Int, Int, Int)) => Ti
   }
 
   def move(location: Point3D, size: Point3D, entity: Entity3D)(goal: Point3D) = {
+    
+    require(eventActor != null, "This TileMap is not started by the area yet")
 
+    // getting data
     var (x, y, z) = location.toInts
     val (width, height, depth) = size.toInts
     val (dx, dy, dz) = location.map(goal)((a, b) => (b - a)).toInts
@@ -128,7 +138,9 @@ private[sidescrolling] class TileMapImpl private (tiles: ((Int, Int, Int)) => Ti
     ) yield tiles(i, j, k)
     
     tileVals.collectFirst[Unit]{
-      case event @ Event(f) => eventActor ! (entity, event)
+      case event @ Event(f) => {
+        eventActor ! (entity, event)
+      }
     }
     
     TileMap.MoveResponse(Point3D(newX, newY, newZ), collisions)

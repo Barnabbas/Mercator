@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 
 class TileMapTest extends FunSuite {
   
-	
+	// todo: create a new test for TileMap
 	test("TileMapTest")(pending)
   
 //  test("isObstalce"){

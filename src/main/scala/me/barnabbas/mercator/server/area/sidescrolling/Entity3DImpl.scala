@@ -207,11 +207,6 @@ private[sidescrolling] class Entity3DImpl(entityData: EntityData, area: SideScro
   }
   
   private[sidescrolling] override def data = entityData
-  
-  override def equals(other: Any) = other match {
-    case ent: Entity3DImpl => ent.data.name == data.name
-    case _ => false
-  }
 
 }
 

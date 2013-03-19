@@ -10,6 +10,7 @@ import me.barnabbas.mercator.server.view.components.Area3DView
 import me.barnabbas.mercator.server.EntityData
 import me.barnabbas.mercator.server.view.View
 import akka.dispatch.ExecutionContexts
+import scala.collection.mutable.HashMap
 
 abstract class SideScrollingArea extends BaseArea {
 
@@ -22,38 +23,49 @@ abstract class SideScrollingArea extends BaseArea {
   def tileMap :TileMap
 
   /** the tiles of this map */
-  private val tileMapActor = {
-    val props = TypedProps(classOf[TileMap], tileMap)
-    TypedActor(context).typedActorOf(props, "tileMap")
+  private val _tileMap = {
+//    val props = TypedProps(classOf[TileMap], tileMap)
+//    TypedActor(context).typedActorOf(props, "tileMap")
+    // made actorless again
+    tileMap.start(context)
   }
 
   /** the entities of this Map */
-  private var entitiesVar: Set[Entity3D] = Set.empty
+  private var _entities: Set[Entity3D] = Set.empty
 
   /** the components */
   private val components = Map('area -> Area3DView(this), 'controller -> PlayerController())
+  
+  /**
+   * The View for the players
+   */
+  val views = new HashMap[Entity3D, View[Entity3D]]
+
+  // updating the entities
+  Updater { time =>
+    for (entity <- _entities) entity.update(time, _tileMap)
+  }
 
   /**
    * The entities that are currently on this Map
    */
-  def entities = entitiesVar
+  def entities = _entities
+  
 
-  // updating the entities
-  Updater { time =>
-    for (entity <- entitiesVar) entity.update(time, tileMapActor)
-  }
-
-  // todo: make something better from this
-  var view: View[Entity3D] = _
 
   /**
    * Creates an entity and places in this area at the given location
    */
   protected def enterEntity(data: EntityData, location: Point3D) {
+    // creating the entity
     val props = TypedProps(classOf[Entity3D], new Entity3DImpl(data, this, location))
-    val entity = TypedActor(context).typedActorOf(props, "entityActor")
-    entitiesVar += entity
-    view = View(components, entity)
+    val actorName = "entity" + data.name replaceAll (" ", "")
+    val entity = TypedActor(context).typedActorOf(props, actorName)
+    
+    // adding the entity to this map
+    _entities += entity
+    val view = View(components, entity)
+    views += entity -> view
     view connect data.client
   }
 
@@ -64,14 +76,17 @@ abstract class SideScrollingArea extends BaseArea {
     val data = entity.data
     
     synchronized{
-    	require(entitiesVar contains entity, s"$entity is not in this Area")
-    	entitiesVar -= entity
+    	require(_entities contains entity, s"$entity is not in this Area")
+    	_entities -= entity
     }
 
     // shutting down everything after the entity left
     implicit val executionContext = ExecutionContexts.global()
+    val view = views(entity)
+    
     view.disconnect() foreach { _ =>
-      TypedActor(context) poisonPill entity
+      TypedActor(context) stop entity
+      TypedActor(context) stop view
       super.leaveEntity(data, gate)
     }
   }

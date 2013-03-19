@@ -14,18 +14,23 @@ import com.typesafe.config.ConfigFactory
  * Will start the View and the Networker. At the moment this also starts the Server
  */
 object Application extends Bootable with App {
+  
+  private val config = {
+    if (!args.isEmpty) ConfigFactory.load.getConfig(args(0))
+    else ConfigFactory.load
+  }
 
-  private val actorSystem = ActorSystem("Application")
+  private val actorSystem = ActorSystem("application", config)
 
   // the View
   View.start()
 
-  // todo: changed for testing
-  Server.main(Array.empty)
+//  // todo: changed for testing
+//  Server.main(Array.empty)
   
   // the Server
-//  private val server = actorSystem.actorFor("akka://mercator@localhost:3225/user/server")
-  private val server = Server.actor
+  private val server = actorSystem.actorFor("akka://mercator@localhost:3225/user/server")
+//  private val server = Server.actor
   
   // the Networker
   private val networker = actorSystem.actorOf(Props[Networker], "Networker")
