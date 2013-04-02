@@ -5,13 +5,15 @@ import me.barnabbas.mercator.server.view.ViewComponentFactory
 import me.barnabbas.mercator.server.view.ViewComponent
 import me.barnabbas.mercator.server.area.sidescrolling.Entity3D
 import me.barnabbas.mercator.networking.Description
+import me.barnabbas.mercator.server.view.ViewComponentActor
+import me.barnabbas.mercator.server.area.sidescrolling.SideScrollingArea
 
 /**
  * This is a Controller that interacts with a user to control an entity.
  * It uses the View to listen for the keys that the user pressed.<br>
  * Currently it uses an Entity2D to communicate with, this is only temporary however.
  */
-class PlayerController(entity: Entity3D) extends ViewComponent {
+class PlayerController(entity: Entity3D, area: SideScrollingArea) extends ViewComponent {
 
   import Entity3D._
   import PlayerController._
@@ -23,20 +25,20 @@ class PlayerController(entity: Entity3D) extends ViewComponent {
 
   // the reactors for the keys
   private val leftKeyReactor = new KeyReactor {
-    def press() = {leftRight -= 1; updateEntity}
-    def release() = {leftRight += 1; updateEntity}
+    def press() = { leftRight -= 1; updateEntity }
+    def release() = { leftRight += 1; updateEntity }
   }
   private val rightKeyReactor = new KeyReactor {
-    def press() = {leftRight += 1; updateEntity}
-    def release() = {leftRight -= 1; updateEntity}
+    def press() = { leftRight += 1; updateEntity }
+    def release() = { leftRight -= 1; updateEntity }
   }
   private val upKeyReactor = new KeyReactor {
-    def press() = {downUp += 1; updateEntity}
-    def release() = {downUp -= 1; updateEntity}
+    def press() = { downUp += 1; updateEntity }
+    def release() = { downUp -= 1; updateEntity }
   }
   private val downKeyReactor = new KeyReactor {
-    def press() = {downUp -= 1; updateEntity}
-    def release() = {downUp += 1; updateEntity}
+    def press() = { downUp -= 1; updateEntity }
+    def release() = { downUp += 1; updateEntity }
   }
 
   private val keyMap = Map(Key.Left -> leftKeyReactor, Key.Right -> rightKeyReactor,
@@ -47,6 +49,7 @@ class PlayerController(entity: Entity3D) extends ViewComponent {
   override def clientEvent = {
     case KeyPressed(key) => keyMap.get(key) foreach (_.press())
     case KeyReleased(key) => keyMap.get(key) foreach (_.release())
+    case Interact(id) => area.entity(id) foreach (_.interact(entity))
   }
 
   /**
@@ -74,7 +77,9 @@ class PlayerController(entity: Entity3D) extends ViewComponent {
 
 object PlayerController {
 
-  def apply() = ViewComponentFactory[Entity3D](Description.ControlListener)(new PlayerController(_))
+  def apply(area: SideScrollingArea) = ViewComponentFactory[Entity3D](Description.ControlListener){entity =>
+    new PlayerController(entity, area) with ViewComponentActor
+  }
 
   /**
    * A small trait use to handle key actions

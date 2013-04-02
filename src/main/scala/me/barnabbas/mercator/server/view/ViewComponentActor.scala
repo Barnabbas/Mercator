@@ -12,9 +12,7 @@ import akka.dispatch.ExecutionContexts
 /**
  * A small wrapper class for ViewComponent, that makes a ViewComponent controlled by an Actor
  */
-private[view] final class ViewComponentActor(component: ViewComponent) extends Actor {
-
-  private var client: ActorRef = _
+trait ViewComponentActor extends ViewComponent with Actor {
 
   private implicit val executionContext = ExecutionContexts.global()
 
@@ -24,37 +22,35 @@ private[view] final class ViewComponentActor(component: ViewComponent) extends A
   override def receive = {
     case actor: ActorRef => {
 
-      // setting the actorRef of the ViewComponent
-      component.actorRefOpt = Some(self)
-
       // setting the client to actor
-      client = actor
-      component.clientOpt = Some(client)
+      clientOpt = Some(actor)
 
       // going to the running state
       context become running
 
       // running initialization code
-      component.preRunning()
+      setup()
     }
-    // todo: comment back
-//    case message => println(s"ViewComponentActor: strange message, $message")
+    
+    case message => println(s"ViewComponentActor: strange message, $message")
   }
 
   /**
    * The receive method for when we are already running
    */
-  private def running: Receive = {
+  protected def running: Receive = {
     case Disconnect => { // stopping this component
       client ! Disconnect
       sender ! "ACK"
       context stop self
     }
-    case Update => component.update() // update request
+    case Update => update() // update request
     case message => {
-      if (sender == client) component.clientEvent(message)
-      else component.serverEvent(message)
+      if (sender == client) clientEvent(message)
+      else serverEvent(message)
     }
   }
 
 }
+
+

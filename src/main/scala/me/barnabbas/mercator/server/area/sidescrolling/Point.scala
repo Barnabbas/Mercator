@@ -37,9 +37,9 @@ private[sidescrolling] trait Point[P <: Point[P]] {
     }
   }
   
-  override def toString = {
-    range map (element(_)) mkString("(", ", ", ")")
-  }
+  override def hashCode = (range map (element _)).hashCode + 13
+  
+  override def toString = range map (element(_)) mkString("(", ", ", ")")
   
 }
 

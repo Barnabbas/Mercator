@@ -39,13 +39,11 @@ object Server extends Bootable with App {
 
       // log in request
       case (name: String, client: ActorRef) => {
-        val data = new EntityData(name, client)
+        val data = new EntityData(name, Some(client))
         println(s"Server: $name just entered the server")
         mainArea ! AreaMessage.EntityEnter(data, Gate.LogIn)
       }
-      case AreaMessage.EntityLeave(entity, Gate.LogOut) => {
-        entity.client ! "exit"
-      }
+      case AreaMessage.EntityLeave(entity, Gate.LogOut) => entity.client foreach (_ ! "exit")
       
       // todo: only temporary, to be able to exit this Server in a normal way
       case "exit" => shutdown()

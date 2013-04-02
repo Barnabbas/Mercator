@@ -6,6 +6,7 @@ import me.barnabbas.mercator.networking.Description
 import me.barnabbas.mercator.networking.Messages
 import me.barnabbas.mercator.server.view.ViewComponentFactory
 import me.barnabbas.mercator.server.view.ViewComponent
+import me.barnabbas.mercator.server.view.ViewComponentActor
 
 /**
  * CommandView is a ViewComponent that allows text-based game behaviour.
@@ -30,7 +31,7 @@ class CommandView(controller: CommandController) extends ViewComponent {
   /**
    * Activating the Controller
    */
-  override def preRunning = {
+  override def setup = {
     val commandState = controller.start()
     commands = commandState.commands
     client ! commandState.description
@@ -135,7 +136,7 @@ object CommandView {
    * @param controller A function to get the controller for this CommandView
    */
   def apply[E](controller: E => CommandController): ViewComponentFactory[E] = ViewComponentFactory(Description.Text) { entity =>
-    new CommandView(controller(entity))
+    new CommandView(controller(entity)) with ViewComponentActor
   }
 
   private val UNKNOWN_COMMAND = "Unknown command; try \"help\" for more information"

@@ -10,7 +10,7 @@ class ControllerListener(networker: ControllerNetworker) extends Renderer {
   
   // the keys that are pressed and released
   // the keys are made such that releasedKeys ++ pressedKeys == keys
-  private val keys = Set(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_SPACE)
+  private val keys = Set(KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_SPACE, KEY_TAB, KEY_LCONTROL)
   private var releasedKeys = keys
   private var pressedKeys = Set.empty[Int]
   

@@ -10,6 +10,11 @@ import akka.actor.Actor
 trait Entity3D {
 
   def location: Point3D
+  
+  /**
+   * The id of this Entity. This is unique for the map this Entity lives in.
+   */
+  def id: Int
 
   /**
    * Makes this Entity move into {@code direction}.
@@ -25,6 +30,11 @@ trait Entity3D {
    * Makes this Entity jump.
    */
   def jump()
+  
+  /**
+   * let {@code entity} interact with this.
+   */
+  def interact(entity: Entity3D)
 
   private[sidescrolling] def update(time: Int, tileMap: TileMap)
   private[sidescrolling] def data: EntityData

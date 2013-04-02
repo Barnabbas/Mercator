@@ -29,16 +29,16 @@ trait SideScrollingRenderer extends Renderer {
     setView()
     renderArea()
 
-    networker.areaSet foreach (renderEntities _)
+    networker.entities foreach renderEntities
+    networker.selected foreach renderSelected
     networker.update()
   }
 
   /**
    * Renders the entities of this SideScrolling map, based on the AreaSet
    */
-  protected def renderEntities(areaSet: AreaSet) {
-    areaSet.entities foreach (renderEntity _)
-    areaSet.player foreach (renderEntity _)
+  protected def renderEntities(entities: Iterable[Entity]) {
+    entities foreach renderEntity
   }
 
   /**
@@ -48,7 +48,6 @@ trait SideScrollingRenderer extends Renderer {
     val (x, y, z) = entity.location
     val (width, height) = (16, 32)
 
-    // running the given code
     // set the color of the quad (R,G,B,A)
     glColor3f(0.5f, 0.5f, 1.0f)
 
@@ -59,6 +58,32 @@ trait SideScrollingRenderer extends Renderer {
     glVertex3f(x + width, y + height, z + 8)
     glVertex3f(x, y + height, z + 8)
     glEnd()
+  }
+  
+  protected def renderSelected(entity: Entity) {
+    
+    val (x, y, z) = entity.location
+    val width = 16
+    
+    // data for the circle
+    val (cx, cy, cz) = (x + width / 2, y + 1, z + width / 2)
+    val radius = width * 1.2
+    
+    // the color of the circle 
+    glColor3f(.7f, .7f, .7f)
+    
+    glBegin(GL_TRIANGLE_FAN)
+    glVertex3f(cx, cy, cz)
+    
+    for(t <- .0 to (2 * math.Pi) by math.Pi / 8){
+      val vx = (cx + math.sin(t) * radius).toFloat
+      val vz = (cz + math.cos(t) * radius).toFloat
+      glVertex3f(vx, cy, vz)
+    }
+    
+    glEnd()
+      
+    
   }
 
 }

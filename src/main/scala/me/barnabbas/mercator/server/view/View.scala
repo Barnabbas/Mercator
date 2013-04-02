@@ -22,12 +22,6 @@ import akka.dispatch.ExecutionContexts
 trait View[E] {
 
   /**
-   * Gets a the ActorRef of the ViewComponent with the given name.
-   * @param name the name of the ViewComponent you want.
-   */
-  def component(name: Symbol): ActorRef
-
-  /**
    * Connects this View with all of its Components to the given Client.
    * Currently we only support one Client, so this method may only be called once.
    */
@@ -41,7 +35,9 @@ trait View[E] {
 }
 
 object View {
-  
+
+  // the implicit vals used for this View
+  private implicit val timeout = Timeout(10, TimeUnit.SECONDS)
   private implicit val executionContext = ExecutionContexts.global()
 
   /**
@@ -50,7 +46,7 @@ object View {
    * @param components the factories for the ViewComponents
    * @param entity the Entity that will be watched
    */
-  def apply[E](components: Map[Symbol, ViewComponentFactory[E]], entity: E)(implicit areaContext: ActorContext) = {
+  def apply[E](components: Seq[ViewComponentFactory[E]], entity: E)(implicit areaContext: ActorContext) = {
     // creating a typed actor of View
     val props = TypedProps(classOf[View[E]], new ViewImpl(components, entity))
     TypedActor(areaContext) typedActorOf props
@@ -59,31 +55,29 @@ object View {
   /**
    * The implementation for the View
    */
-  private class ViewImpl[E](componentFactories: Map[Symbol, ViewComponentFactory[E]], entity: E) extends View[E] {
+  private class ViewImpl[E](componentFactories: Seq[ViewComponentFactory[E]], entity: E) extends View[E] {
 
     /** The ViewComponents of this View */
-    private val components = for ((name, factory) <- componentFactories) yield {
-      name -> (TypedActor.context actorOf (Props(new ViewComponentActor(factory(entity))), name.toString))
+    private val components = for (factory <- componentFactories) yield {
+      TypedActor.context actorOf (Props(factory(entity)))
     }
 
     /** The Client this View is connected to */
     private var client = Option.empty[Client]
 
-    override def component(name: Symbol) = components(name)
-
     def connect(client: Client) = {
       require(this.client.isEmpty, "You can only connect to one Client")
       this.client = Some(client)
-      for ((name, comp) <- components) {
-        client ! Connect(comp, componentFactories(name).description)
+      for ((comp, factory) <- components zip componentFactories) {
+        client ! Connect(comp, factory.description)
       }
     }
 
-    def disconnect(): Future[Unit] = 
-      Future.sequence(components.values map {
-        ask(_, Disconnect)(Timeout(10, TimeUnit.SECONDS))
-      }) map (a => {})
     
+    def disconnect(): Future[Unit] = Future.traverse(components) { actor =>
+      actor ? Disconnect
+    } map (a => {})
+
   }
 
 }

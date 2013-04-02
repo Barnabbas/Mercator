@@ -12,6 +12,8 @@ import scala.concurrent.Future
 import akka.dispatch.ExecutionContexts
 import me.barnabbas.mercator.server.area.sidescrolling.Tile
 import me.barnabbas.mercator.server.area.sidescrolling.TileMapImpl
+import me.barnabbas.mercator.server.EntityData
+import me.barnabbas.mercator.server.area.sidescrolling.Point3D
 
 class WelcomeArea extends ManagerArea {
 	import WelcomeArea._
@@ -92,6 +94,9 @@ object WelcomeArea {
     protected override def onEntityEnter(entity: EntityData, gate: Gate) = gate match {
       case FieldHouseGate => enterEntity(entity, Point3D(140, 150, 20))
     }
+    
+    // adding some entities to this Area
+    enterEntity(new EntityData("Strange guy", None), new Point3D(70, 150, 40))
     
   }
 

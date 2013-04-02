@@ -7,6 +7,11 @@ object Input {
   
   case class KeyPressed(key: Key)
   case class KeyReleased(key: Key)
+  /**
+   * An notification that the client want to interact with an entity
+   * @param id the id of the entity
+   */
+  case class Interact(id: Any)
   
   type Key = Key.Value
   

@@ -20,7 +20,7 @@ class ViewComponentActorTest extends FunSuite with BeforeAndAfter  {
   before{
     system = ActorSystem("testViewComponent")
     implicit val actorSystem = system
-    component = TestActorRef(new ViewComponentActor(new TestComponent))
+    component = TestActorRef(new TestComponent with ViewComponentActor)
     client = TestActorRef[TestClient]
     
     // connecting
@@ -67,7 +67,7 @@ object ViewComponentActorTest {
    * A test ViewComponent which sends a message back to the client each 
    */
   class TestComponent extends ViewComponent{
-    override def preRunning() = client ! "preRunning"
+    override def setup() = client ! "preRunning"
     
     override def clientEvent() = {
       case message => client ! ("clientEvent", message)
@@ -89,7 +89,9 @@ object ViewComponentActorTest {
         component ! self
       }
       case ("send",  message) => component ! message
-      case message => lastMessage = message
+      case message => {
+        lastMessage = message
+      }
     }
   }
 }

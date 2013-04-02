@@ -8,7 +8,7 @@ import akka.actor.TypedActor
 /**
  * The implementation of Entity3D. (required to use it for the typedActors.)
  */
-private[sidescrolling] class Entity3DImpl(entityData: EntityData, area: SideScrollingArea, loc: Point3D)
+private[sidescrolling] class Entity3DImpl(entityData: EntityData, loc: Point3D, _id: Int)
 	extends Entity3D {
 
   // giving access to Tuple2 to Point2D conversions
@@ -34,11 +34,19 @@ private[sidescrolling] class Entity3DImpl(entityData: EntityData, area: SideScro
    * Will constantly be updated by the update function.
    */
   private var onTheFloor: Boolean = _
+  
+  
+  def data = entityData
 
   /**
    * The location of this Entity
    */
   def location = _loc
+  
+  /**
+   * The id of this Entity
+   */
+  def id = _id
 
   /**
    * Updates this Entity2D
@@ -85,6 +93,11 @@ private[sidescrolling] class Entity3DImpl(entityData: EntityData, area: SideScro
    */
   def stop() = {
     this.status = Status.Stopped
+  }
+  
+  def interact(entity: Entity3D) = {
+    println(s"Entity3dImpl: interact ${entity.data.name} with ${data.name}")
+    // todo
   }
 
   /* Some values for jumping */
@@ -200,13 +213,6 @@ private[sidescrolling] class Entity3DImpl(entityData: EntityData, area: SideScro
 
   }
   
-  /** shuts the actor belonging to this Entity down */
-  private[sidescrolling] def shutdown(){
-    val context = TypedActor.context
-    context.stop(context.self)
-  }
-  
-  private[sidescrolling] override def data = entityData
 
 }
 

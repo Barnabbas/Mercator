@@ -6,6 +6,7 @@ import akka.actor.TypedActor
 import akka.actor.Props
 import akka.actor.ActorRef
 import akka.actor.ActorContext
+import akka.actor.ActorRefFactory
 
 /**
  * Simple implementation for the TileMap trait.
@@ -20,8 +21,8 @@ private[sidescrolling] class TileMapImpl private (tiles: ((Int, Int, Int)) => Ti
   /** The actor to handle the events (this must be done asynchronous) */
   private var eventActor: ActorRef = _
   
-  private[sidescrolling] def start(context: ActorContext): TileMap = {
-    eventActor = context.actorOf(Props[EventActor], "TileMapEventActor")
+  private[sidescrolling] def start(factory: ActorRefFactory): TileMap = {
+    eventActor = factory.actorOf(Props[EventActor], "TileMapEventActor")
     this
   }
   
@@ -29,13 +30,18 @@ private[sidescrolling] class TileMapImpl private (tiles: ((Int, Int, Int)) => Ti
   def isOnFloor(location: Point3D, size: Point3D) = {
     // todo: use all ground under it (like is done for real checking of obstacles)
 
-    // taking an y that is lower then current y
-    val testY = location.y - 1
-
-    // checking left corner (using tileMap.apply)
-    tiles(((location.x / tileWidth) toInt, (testY / tileHeight) toInt, 0)) == Obstacle ||
-      // right corner
-      tiles(((location.x + size.x) / tileWidth) toInt, (testY / tileHeight) toInt, 0) == Obstacle
+    
+    val (x, _, z) = location map (_.floor.toInt)
+    val (width, _, depth) = size.toInts
+    
+    // the index for y (just a little lower then his real location)
+    val j = div((location.y - (size.y / 10)).toInt, tileHeight)
+    val tileVals = for (
+      i <- div(x, tileWidth) to div(x + width, tileWidth);
+      k <- div(z, tileDepth) to div(z + depth, tileDepth)
+    ) yield (i, j, k) -> tiles(i, j, k)
+    
+    tileVals.unzip._2 contains Obstacle
   }
 
   def move(location: Point3D, size: Point3D, entity: Entity3D)(goal: Point3D) = {
@@ -129,8 +135,8 @@ private[sidescrolling] class TileMapImpl private (tiles: ((Int, Int, Int)) => Ti
     z = newZ.toInt
     if (isEdgeHit) collisions ::= TileMap.Collision.Edge
     
-    // todo: enable events
     // checking for events on the tiles we collision with
+    
     val tileVals = for (
       i <- div(x, tileWidth) to div(x + width, tileWidth);
       j <- div(y, tileHeight) to div(y + height, tileHeight);

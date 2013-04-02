@@ -14,59 +14,63 @@ import scala.collection.mutable.HashMap
 
 abstract class SideScrollingArea extends BaseArea {
 
-  /** An identifier for this SideScrollingArea, used for choosing the view */
-  def identifier: String
-  
-  /**
-   * Creates a TileMap for this Area.
-   */
-  def tileMap :TileMap
-
   /** the tiles of this map */
-  private val _tileMap = {
-//    val props = TypedProps(classOf[TileMap], tileMap)
-//    TypedActor(context).typedActorOf(props, "tileMap")
-    // made actorless again
-    tileMap.start(context)
-  }
+  private val _tileMap = tileMap.start(context)
 
   /** the entities of this Map */
   private var _entities: Set[Entity3D] = Set.empty
 
   /** the components */
-  private val components = Map('area -> Area3DView(this), 'controller -> PlayerController())
-  
+  private val components = Seq(Area3DView(this))
+
   /**
    * The View for the players
    */
-  val views = new HashMap[Entity3D, View[Entity3D]]
+  private val views = new HashMap[Entity3D, View[Entity3D]]
 
-  // updating the entities
-  Updater { time =>
-    for (entity <- _entities) entity.update(time, _tileMap)
-  }
+  /**
+   * An iterator to generate Ids for the Entities. This generator will always have a next.
+   */
+  private val idGenerator = Stream.from(0).iterator
+
+  /** An identifier for this SideScrollingArea, used for choosing the view */
+  def identifier: String
+
+  /**
+   * Creates a TileMap for this Area.
+   */
+  def tileMap: TileMap
 
   /**
    * The entities that are currently on this Map
    */
   def entities = _entities
   
-
+  /**
+   * Returns the entity with the given id if this entity is in this area.
+   */
+  def entity(id: Any) = entities find (_.id == id)
 
   /**
    * Creates an entity and places in this area at the given location
    */
   protected def enterEntity(data: EntityData, location: Point3D) {
+
     // creating the entity
-    val props = TypedProps(classOf[Entity3D], new Entity3DImpl(data, this, location))
-    val actorName = "entity" + data.name replaceAll (" ", "")
+    val id = synchronized(idGenerator.next())
+    val props = TypedProps(classOf[Entity3D], new Entity3DImpl(data, location, id))
+    val actorName = "entity" + id.toString
     val entity = TypedActor(context).typedActorOf(props, actorName)
-    
+
     // adding the entity to this map
     _entities += entity
-    val view = View(components, entity)
-    views += entity -> view
-    view connect data.client
+
+    // creating a view for the entity if there is a client connected to
+    for (client <- data.client) {
+      val view = View(components, entity)
+      views += entity -> view
+      view connect client
+    }
   }
 
   /**
@@ -74,16 +78,18 @@ abstract class SideScrollingArea extends BaseArea {
    */
   protected def leaveEntity(entity: Entity3D, gate: Gate) = {
     val data = entity.data
-    
-    synchronized{
-    	require(_entities contains entity, s"$entity is not in this Area")
-    	_entities -= entity
+
+    synchronized {
+      require(_entities contains entity, s"$entity is not in this Area")
+      _entities -= entity
     }
+
+    // updating views
+    val view = views(entity)
+    views -= entity
 
     // shutting down everything after the entity left
     implicit val executionContext = ExecutionContexts.global()
-    val view = views(entity)
-    
     view.disconnect() foreach { _ =>
       TypedActor(context) stop entity
       TypedActor(context) stop view
@@ -92,5 +98,10 @@ abstract class SideScrollingArea extends BaseArea {
   }
 
   override def toString() = identifier
+
+  // updating the entities
+  Updater { time =>
+    for (entity <- _entities) entity.update(time, _tileMap)
+  }
 
 }

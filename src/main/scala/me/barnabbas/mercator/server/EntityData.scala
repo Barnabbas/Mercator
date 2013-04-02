@@ -12,9 +12,9 @@ import akka.actor.ActorRef
 /**
  * Constructs a new EntityData
  * @param name the name of the EntityData
- * @param client the Actor of the client where the View is connected to
+ * @param client the Actor of the client where the View is connected to. Not all entites have this.
  */
-class EntityData(val name: String, val client: Client){
+class EntityData(val name: String, val client: Option[Client]){
   
   override def toString = "Entity: " + name
   

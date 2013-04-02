@@ -21,23 +21,23 @@ trait ViewComponent {
    * Receive events from the client this component is connected to.
    * Should be overridden; by default it gives an error when it receives a message.
    */
-  protected[view] def clientEvent: Receive = notImplemented("clientEvent")
+  protected def clientEvent: Receive = notImplemented("clientEvent")
 
   /**
    * Receive events from other parts of the Server.
    * Should be overridden; by default it gives an error when it receives a message.
    */
-  protected[view] def serverEvent: Receive = notImplemented("serverEvent")
+  protected def serverEvent: Receive = notImplemented("serverEvent")
 
   /**
    * Updates the client with information about the state of the Area.
    */
-  protected[view] def update(): Unit = ???
+  protected def update(): Unit = notImplemented("update")
 
   /**
    * Code that must be run on initializing
    */
-  protected[view] def preRunning(): Unit = {
+  protected def setup(): Unit = {
     // default is no operation
   }
 
@@ -46,21 +46,12 @@ trait ViewComponent {
    */
   private[view] var clientOpt: Option[Client] = None
 
-  private[view] var actorRefOpt: Option[ActorRef] = None
-
   /**
    * The Client this ViewComponent is connected to.
    * @throws IllegalStateException if no Client is connected (yet).
    */
   protected final def client =
     clientOpt getOrElse (throw new IllegalStateException("No client connected yet"))
-
-  /**
-   * The actorRef of this ViewComponent
-   * @throws IllegalStateException when the ActorRef has not been created yet.
-   */
-  protected final def self =
-    actorRefOpt getOrElse (throw new IllegalStateException("Not found itself yet"))
 
   /**
    * The default implementation when the receive functions are not implemented

@@ -15,8 +15,8 @@ abstract class NetworkerComponent extends Actor {
   private var _server: ActorRef = _
   private var renderer: Renderer = _
 
-  final override def receive = {
-    case Connect(actor, description) => {
+  override def receive = {
+    case NetworkerComponent.Start(actor, description) => {
       actor ! self
       _server = actor
       renderer = renderer(description)
@@ -46,4 +46,16 @@ abstract class NetworkerComponent extends Actor {
    * Will be called when a message has been send from the server
    */
   def receiveMessage: Actor.Receive
+}
+
+object NetworkerComponent {
+  
+  /**
+   * A message to indicate that the NetworkerComponent can start.
+   * @param actor the ActorRef of the ViewComponent of the server
+   * @param description a Description of what should be shown
+   */
+  case class Start(actor: ActorRef, description: Description)
+  def Start(connect: Connect): Start = Start(connect.actor, connect.description)
+  
 }

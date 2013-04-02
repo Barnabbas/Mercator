@@ -16,21 +16,22 @@ class Networker extends Actor {
   override def receive = {
     // got start request
     case Networker.Start(server) => {
-      server ! (math.random.toString, self)
+      server ! ("Stef", self)
     }
-    
-    case connect @ Connect(actor, description) => description match {
-      case SideScrolling3D(id) => {
-        val networker = context.actorOf(Props[SideScrollingNetworker])
-        networker ! connect
+
+    case Connect(actor, description) => {
+      
+      // creating the component
+      val networkerComponent = description match {
+        case SideScrolling3D(id) => context.actorOf(Props[SideScrollingNetworker])
+        case ControlListener => context.actorOf(Props[ControllerNetworker])
+        case Text => ???
       }
-      case Text => ???
-      case ControlListener => {
-        val networker = context.actorOf(Props[ControllerNetworker])
-        networker ! connect
-      }
+      
+      // sending start message
+      networkerComponent ! NetworkerComponent.Start(actor, description)
     }
-    
+
     case "exit" => Application.shutdown()
   }
 
